@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Tracker</title>
+<meta name="theme-color" content="#17191D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#17191D; --surface:#202328; --surface-2:#292D33; --ink:#F4F5F2;
+  --muted:#9CA2AA; --faint:#707781; --hair:#30343A;
+  --green:#5DE2AA; --green-bg:#18382F;
+  --red:#FF7C87; --red-bg:#40262C;
+  --blue:#8DAFFF; --blue-bg:#28354E;
+  --amber:#F5C85B; --amber-bg:#44391F;
+}
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#EEF0F3; --ink:#181A1E;
+  --muted:#626A74; --faint:#969CA4; --hair:#DEE2E7;
+  --green:#12986A; --green-bg:#DDF5EA;
+  --red:#D84D59; --red-bg:#FBE4E7;
+  --blue:#4D7ED6; --blue-bg:#E6EDFC;
+  --amber:#A97000; --amber-bg:#FFF0C9;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;overscroll-behavior-y:none}
+body{padding-top:env(safe-area-inset-top);padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+button{font-family:inherit}
+.brand-name,.hero-month,.stat-value,.editor-date,.habit-val,.cal-num{font-family:'Montserrat',sans-serif}
+.wrap{width:min(100%,620px);margin:auto;padding:0 18px}
+
+/* Header */
+.top{padding-top:14px}
+.brand{display:flex;align-items:center;justify-content:space-between}
+.brand-name{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.brand-name span{color:var(--green)}
+.top-actions{display:flex;gap:8px;align-items:center}
+.theme-toggle,.month-nav{height:38px;padding:4px;display:flex;gap:2px;border:1px solid var(--hair);background:var(--surface);border-radius:12px}
+.theme-toggle button{border:0;background:transparent;color:var(--faint);display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer}
+.theme-toggle button{width:30px;height:30px}
+.theme-toggle button.active{background:var(--surface-2);color:var(--ink)}
+.theme-toggle svg{width:15px;height:15px}
+
+/* Hero */
+.hero{padding:5px 0 12px}
+.hero-kicker{font-size:9px;font-weight:800;letter-spacing:.19em;text-transform:uppercase;color:var(--green);margin-bottom:9px}
+.hero-title{display:flex;align-items:baseline;gap:9px}
+.hero-month{font-size:32px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.hero-year{font-size:13px;color:var(--muted);font-weight:700}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);column-gap:14px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);margin-bottom:16px}
+.stat{position:relative;padding:12px 0 11px}
+.stat:not(:last-child)::after{content:"";position:absolute;right:-7px;top:10px;bottom:10px;width:1px;background:var(--hair)}
+.stat-value{font-family:'Manrope',sans-serif;font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.stat-label{margin-top:7px;color:var(--faint);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.stat.gym .stat-value{color:var(--green)}
+.stat.run .stat-value{color:var(--blue)}
+.stat.rest .stat-value{color:var(--muted)}
+.stat.habit .stat-value{color:var(--amber)}
+
+/* Calendar — deliberately borderless, everything shares one column axis */
+.calendar{margin:0}
+.cal-wd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;padding:0 0 6px}
+.cal-wd{text-align:center;color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.08em;line-height:20px;text-transform:uppercase}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;row-gap:2px;grid-auto-rows:61px}
+.cal-cell{
+  min-width:0;position:relative;padding:9px 6px 8px;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  background:transparent;border:0;border-radius:14px;overflow:visible;cursor:pointer;
+}
+.cal-cell.empty{cursor:default}
+.cal-cell:not(.empty):not(.future):hover{background:var(--surface)}
+.cal-cell:not(.empty):not(.future):active{background:var(--surface-2);transform:scale(.985)}
+.cal-cell.today{box-shadow:inset 0 0 0 1.5px var(--green);background:transparent}
+.cal-cell.selected:not(.today){box-shadow:inset 0 0 0 1.5px var(--blue);background:transparent}
+.cal-num{width:100%;text-align:center;font-size:13px;font-weight:600;line-height:1;color:var(--muted);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.cal-cell.today .cal-num{color:var(--green);font-weight:700}
+.cal-cell.selected:not(.today) .cal-num{color:var(--blue);font-weight:700}
+.cal-cell.future{opacity:.4;cursor:default}
+.cal-habit-badge{
+  position:absolute;right:5px;top:7px;min-width:16px;height:16px;padding:0 4px;
+  display:flex;align-items:center;justify-content:center;border-radius:6px;
+  background:var(--amber-bg);color:var(--amber);font:700 8px 'Montserrat',sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+.cal-habit-badge:empty,.cal-habit-badge:not(.has-val){display:none}
+
+/* Activity row: sits left-aligned under the day number, same edge as the number */
+.cal-gr-row{display:flex;align-items:center;justify-content:center;gap:3px;width:100%}
+.cal-chip{
+  flex:0 0 19px;width:19px;height:19px;padding:0;border:0;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-2);color:var(--faint);opacity:.7
+}
+.cal-chip svg{width:12px;height:12px;stroke-width:2.2}
+.cal-chip.yes{background:var(--green-bg);color:var(--green);opacity:1}
+.cal-chip.no{background:var(--red-bg);color:var(--red);opacity:1}
+.cal-chip.rest{background:var(--blue-bg);color:var(--blue);opacity:1}
+
+/* Editor */
+.editor{margin-top:12px;padding-top:13px;border-top:1px solid var(--hair)}
+.editor-head{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:9px}
+.editor-date{font-size:17px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.editor-wd{font-size:10px;font-weight:700;color:var(--faint)}
+.field-row{min-height:49px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--hair)}
+.field-lbl{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:12px;font-weight:700}
+.field-lbl svg{width:16px;height:16px;color:var(--faint);stroke-width:2.15}
+.pill{min-width:63px;padding:8px 12px;border-radius:9px;border:1px solid var(--hair);background:var(--surface);color:var(--muted);font-size:10px;font-weight:800;cursor:pointer}
+.pill.state-yes{background:var(--green-bg);border-color:transparent;color:var(--green)}
+.pill.state-no{background:var(--red-bg);border-color:transparent;color:var(--red)}
+.pill.state-rest{background:var(--blue-bg);border-color:transparent;color:var(--blue)}
+.habit-stepper{display:flex;align-items:center;gap:5px;padding:3px;border-radius:11px;background:var(--surface-2)}
+.habit-stepper button{width:29px;height:29px;border:0;border-radius:8px;background:var(--surface);color:var(--ink);font-size:16px;cursor:pointer}
+.habit-val{width:21px;text-align:center;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* Footer */
+.legend{display:flex;justify-content:center;flex-wrap:wrap;gap:15px;margin:22px 0 0}
+.legend-item{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:9.5px;font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%}.dot.yes{background:var(--green)}.dot.no{background:var(--red)}.dot.rest{background:var(--blue)}
+.footnote{text-align:center;color:var(--faint);font-size:9.5px;margin-top:11px;line-height:1.6}
+
+@media(max-width:420px){
+  .wrap{padding:0 15px}
+  .hero{padding-top:4px;padding-bottom:11px}
+  .hero-month{font-size:30px}
+  .cal-grid{grid-auto-rows:58px}
+  .cal-cell{padding-left:2px;padding-right:2px}
+  .cal-chip{flex-basis:19px;width:19px;height:19px}
+  .cal-chip svg{width:11px;height:11px}
+}
+@media(max-width:360px){
+  .top-actions{gap:5px}
+  .theme-toggle button{width:27px}
+  .cal-grid{grid-auto-rows:55px;column-gap:1px}
+  .cal-cell{padding-left:2px;padding-right:2px}
+  .cal-chip{flex:0 0 18px;width:18px;height:18px}
+  .cal-chip svg{width:11px;height:11px}
+  .cal-gr-row{gap:2px}
+}
+</style>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <div class="brand-name">Tracker<span>.</span></div>
+    <div class="top-actions">
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        <button id="darkThemeBtn" aria-label="Dark theme" title="Dark theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.7 6.7 0 0 0 21 12.8Z"/></svg>
+        </button>
+        <button id="lightThemeBtn" aria-label="Light theme" title="Light theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div class="hero-kicker">Monthly progress</div>
+      <div class="hero-title">
+        <span class="hero-month" id="monthLabel">September</span>
+        <span class="hero-year" id="yearLabel">2026</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="stats" aria-label="Monthly summary">
+  <div class="stat gym"><div class="stat-value" id="statGym">0</div><div class="stat-label">Gym</div></div>
+  <div class="stat run"><div class="stat-value" id="statRun">0</div><div class="stat-label">Run</div></div>
+  <div class="stat rest"><div class="stat-value" id="statRest">0</div><div class="stat-label">Rest</div></div>
+  <div class="stat habit"><div class="stat-value" id="statHabit">0</div><div class="stat-label">Habit</div></div>
+</section>
+
+<main class="calendar">
+  <div class="cal-wd-row" id="wdRow"></div>
+  <div class="cal-grid" id="calGrid"></div>
+</main>
+
+<section class="editor" id="editor">
+  <div class="editor-head">
+    <div class="editor-date" id="editDate">—</div>
+    <div class="editor-wd" id="editWd">—</div>
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M20 9v6M22 10v4M7 12h10M7 8v8M17 8v8"/></svg>
+      Gym
+    </div>
+    <button class="pill" id="gymPill">—</button>
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="4.5" r="1.6" fill="currentColor" stroke="none"/><path d="M9 20l2.5-5 2-2-1-4-3 1-2 4M11.5 13l3 2 3.5-1M8 10l3-2.5 2.5 1.5 3-1"/></svg>
+      Run
+    </div>
+    <button class="pill" id="runPill">—</button>
+  </div>
+  <div class="field-row">
+    <div class="field-lbl">Custom habit</div>
+    <div class="habit-stepper">
+      <button id="habitMinus" aria-label="Decrease habit count">−</button>
+      <div class="habit-val" id="habitVal">0</div>
+      <button id="habitPlus" aria-label="Increase habit count">+</button>
+    </div>
+  </div>
+</section>
+
+<div class="legend">
+  <div class="legend-item"><span class="dot yes"></span>Yes</div>
+  <div class="legend-item"><span class="dot no"></span>No</div>
+  <div class="legend-item"><span class="dot rest"></span>Rest</div>
+  <div class="legend-item">Number = habit count</div>
+</div>
+<div class="footnote">Tap a day to edit it · Saved on this device only</div>
+</div>
+<script>
+(function(){
+  const STORAGE_KEY = 'tracker-habit-data-v5';
+  const THEME_KEY = 'tracker-theme-v1';
+  const root = document.documentElement;
+  const darkThemeBtn = document.getElementById('darkThemeBtn');
+  const lightThemeBtn = document.getElementById('lightThemeBtn');
+
+  function setTheme(theme){
+    root.dataset.theme = theme;
+    localStorage.setItem(THEME_KEY, theme);
+    darkThemeBtn.classList.toggle('active', theme === 'dark');
+    lightThemeBtn.classList.toggle('active', theme === 'light');
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if(metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#17191D' : '#F7F8FA');
+  }
+
+  let savedTheme = localStorage.getItem(THEME_KEY);
+  if(savedTheme !== 'dark' && savedTheme !== 'light'){
+    savedTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  setTheme(savedTheme);
+
+  darkThemeBtn.addEventListener('click', ()=>setTheme('dark'));
+  lightThemeBtn.addEventListener('click', ()=>setTheme('light'));
+
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const WD_SHORT = ["S","M","T","W","T","F","S"];
+  const WD_FULL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e){ data = {}; }
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+  function key(y,m,d){ return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'); }
+  function getEntry(k){ if(!data[k]) data[k] = { gym:'No', run:'No', habit:0 }; return data[k]; }
+  function peekEntry(k){ return data[k] || { gym:'No', run:'No', habit:0 }; }
+
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth();
+  let selectedKey = key(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const monthLabel = document.getElementById('monthLabel');
+  const yearLabel = document.getElementById('yearLabel');
+  const wdRow = document.getElementById('wdRow');
+  const calGrid = document.getElementById('calGrid');
+  const statGym = document.getElementById('statGym');
+  const statRun = document.getElementById('statRun');
+  const statRest = document.getElementById('statRest');
+  const statHabit = document.getElementById('statHabit');
+
+  const editDate = document.getElementById('editDate');
+  const editWd = document.getElementById('editWd');
+  const gymPill = document.getElementById('gymPill');
+  const runPill = document.getElementById('runPill');
+  const habitVal = document.getElementById('habitVal');
+
+  WD_SHORT.forEach(w=>{
+    const el = document.createElement('div');
+    el.className = 'cal-wd';
+    el.textContent = w;
+    wdRow.appendChild(el);
+  });
+
+  function cycle(state){
+    if(state === 'No') return 'Yes';
+    if(state === 'Yes') return 'Rest';
+    return 'No';
+  }
+  function pillClass(state){
+    if(state === 'Yes') return 'pill state-yes';
+    if(state === 'Rest') return 'pill state-rest';
+    return 'pill state-no';
+  }
+  function tagClass(state){
+    if(state === 'Yes') return 'cal-chip yes';
+    if(state === 'Rest') return 'cal-chip rest';
+    if(state === 'No') return 'cal-chip no';
+    return 'cal-chip';
+  }
+  const GYM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M2 10v4M20 9v6M22 10v4M7 12h10M7 8v8M17 8v8"/></svg>';
+  const RUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="4.5" r="1.6" fill="currentColor" stroke="none"/><path d="M9 20l2.5-5 2-2-1-4-3 1-2 4M11.5 13l3 2 3.5-1M8 10l3-2.5 2.5 1.5 3-1"/></svg>';
+  function isFuture(y,m,d){
+    const dt = new Date(y,m,d);
+    const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return dt > t;
+  }
+
+  function renderEditor(){
+    const e = peekEntry(selectedKey);
+    const [y,m,d] = selectedKey.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    editDate.textContent = MONTH_NAMES[m-1].slice(0,3) + ' ' + d + ', ' + y;
+    editWd.textContent = WD_FULL[dt.getDay()];
+    gymPill.textContent = e.gym;
+    gymPill.className = pillClass(e.gym);
+    runPill.textContent = e.run;
+    runPill.className = pillClass(e.run);
+    habitVal.textContent = e.habit || 0;
+  }
+
+  function render(){
+    monthLabel.textContent = MONTH_NAMES[viewMonth];
+    yearLabel.textContent = viewYear;
+
+    const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+    const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
+    calGrid.innerHTML = '';
+
+    let gymCount=0, runCount=0, restCount=0, habitTotal=0;
+
+    for(let i=0; i<firstWeekday; i++){
+      const filler = document.createElement('div');
+      filler.className = 'cal-cell empty';
+      calGrid.appendChild(filler);
+    }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const k = key(viewYear, viewMonth, d);
+      const raw = data[k]; // do NOT auto-create here, only read
+      const e = raw || { gym:'', run:'', habit:0 };
+      const dt = new Date(viewYear, viewMonth, d);
+      const future = isFuture(viewYear, viewMonth, d);
+      const isToday = dt.toDateString() === today.toDateString();
+
+      if(!future && raw){
+        if(raw.gym === 'Yes') gymCount++;
+        if(raw.run === 'Yes') runCount++;
+        if(raw.gym === 'Rest' || raw.run === 'Rest') restCount++;
+        habitTotal += (raw.habit||0);
+      }
+
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell' + (future ? ' future' : '') + (isToday ? ' today' : '') + (k === selectedKey ? ' selected' : '');
+      const habitDisplay = raw ? (raw.habit || 0) : '';
+      cell.innerHTML = `
+        <div class="cal-habit-badge${habitDisplay !== '' && habitDisplay > 0 ? ' has-val' : ''}">${habitDisplay}</div>
+        <div class="cal-num">${d}</div>
+        <div class="cal-gr-row">
+          <div class="${tagClass(e.gym)}">${GYM_ICON}</div>
+          <div class="${tagClass(e.run)}">${RUN_ICON}</div>
+        </div>
+      `;
+      if(!future){
+        cell.addEventListener('click', ()=>{
+          selectedKey = k;
+          render();
+        });
+      }
+      calGrid.appendChild(cell);
+    }
+
+    statGym.textContent = gymCount;
+    statRun.textContent = runCount;
+    statRest.textContent = restCount;
+    statHabit.textContent = habitTotal;
+
+    renderEditor();
+  }
+
+  gymPill.addEventListener('click', ()=>{
+    const e = getEntry(selectedKey);
+    e.gym = cycle(e.gym);
+    save();
+    render();
+  });
+  runPill.addEventListener('click', ()=>{
+    const e = getEntry(selectedKey);
+    e.run = cycle(e.run);
+    save();
+    render();
+  });
+  document.getElementById('habitMinus').addEventListener('click', ()=>{
+    const e = getEntry(selectedKey);
+    e.habit = Math.max(0, (e.habit||0) - 1);
+    save();
+    render();
+  });
+  document.getElementById('habitPlus').addEventListener('click', ()=>{
+    const e = getEntry(selectedKey);
+    e.habit = Math.min(10, (e.habit||0) + 1);
+    save();
+    render();
+  });
+
+  function changeMonth(delta){
+    viewMonth += delta;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    render();
+  }
+
+  let swipeStartX = null;
+  let swipeStartY = null;
+
+  calGrid.addEventListener('touchstart', (ev)=>{
+    if(!ev.touches || !ev.touches.length) return;
+    swipeStartX = ev.touches[0].clientX;
+    swipeStartY = ev.touches[0].clientY;
+  }, {passive:true});
+
+  calGrid.addEventListener('touchend', (ev)=>{
+    if(swipeStartX === null || !ev.changedTouches || !ev.changedTouches.length) return;
+
+    const dx = ev.changedTouches[0].clientX - swipeStartX;
+    const dy = ev.changedTouches[0].clientY - swipeStartY;
+
+    swipeStartX = null;
+    swipeStartY = null;
+
+    // Only treat a clear horizontal gesture as month navigation.
+    if(Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+
+    changeMonth(dx < 0 ? 1 : -1);
+  }, {passive:true});
+
+  render();
+})();
+</script>
+</body></html>
