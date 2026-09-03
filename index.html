@@ -32,10 +32,10 @@ html[data-theme="light"]{
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;overscroll-behavior-y:none}
-body{padding-top:env(safe-area-inset-top);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+body{display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
 button{font-family:inherit}
 .brand-name,.hero-month,.stat-value,.editor-date,.habit-val,.cal-num{font-family:'Montserrat',sans-serif}
-.wrap{width:min(100%,620px);margin:auto;padding:0 18px}
+.wrap{width:min(100%,620px);margin:auto;padding:0 18px;flex:1;display:flex;flex-direction:column}
 
 /* Header */
 .top{padding-top:14px}
@@ -68,10 +68,10 @@ button{font-family:inherit}
 .stat.habit .stat-value{color:var(--amber)}
 
 /* Calendar — deliberately borderless, everything shares one column axis */
-.calendar{margin:0}
+.calendar{margin:0;flex:1;display:flex;flex-direction:column}
 .cal-wd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;padding:0 0 4px}
 .cal-wd{text-align:center;color:var(--faint);font-size:10px;font-weight:800;letter-spacing:.08em;line-height:20px;text-transform:uppercase}
-.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;row-gap:2px;grid-auto-rows:59px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:2px;row-gap:2px;grid-auto-rows:minmax(59px,1fr);flex:1}
 .cal-cell{
   min-width:0;position:relative;padding:9px 6px 8px;
   display:flex;flex-direction:column;align-items:center;justify-content:space-between;
@@ -132,7 +132,7 @@ button{font-family:inherit}
   .wrap{padding:0 15px}
   .hero{padding-top:4px;padding-bottom:11px}
   .hero-month{font-size:30px}
-  .cal-grid{grid-auto-rows:54px}
+  .cal-grid{grid-auto-rows:minmax(54px,1fr)}
   .cal-cell{padding-left:2px;padding-right:2px}
   .cal-chip{flex-basis:19px;width:19px;height:19px}
   .cal-chip svg{width:11px;height:11px}
@@ -140,7 +140,7 @@ button{font-family:inherit}
 @media(max-width:360px){
   .top-actions{gap:5px}
   .theme-toggle button{width:27px}
-  .cal-grid{grid-auto-rows:55px;column-gap:1px}
+  .cal-grid{grid-auto-rows:minmax(55px,1fr);column-gap:1px}
   .cal-cell{padding-left:2px;padding-right:2px}
   .cal-chip{flex:0 0 18px;width:18px;height:18px}
   .cal-chip svg{width:11px;height:11px}
