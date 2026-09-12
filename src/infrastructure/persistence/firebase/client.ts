@@ -17,6 +17,12 @@ async function ensureCloud() {
   const config = firebaseConfig(); if (!config) return null
   const app = getApps()[0] ?? initializeApp(config)
   auth ??= getAuth(app); firestore ??= getFirestore(app)
+  // getAuth() returns immediately, but restoring a previously-persisted session (including a
+  // Google-linked one) from browser storage happens asynchronously, a moment later. Checking
+  // auth.currentUser before that restoration finishes always sees it as empty and creates a
+  // brand new anonymous session right then — silently discarding the real, already-linked one.
+  // authStateReady() waits for that initial restoration to actually complete first.
+  await auth.authStateReady()
   if (!auth.currentUser) await signInAnonymously(auth)
   return auth.currentUser?.uid && firestore ? { uid: auth.currentUser.uid, db: firestore } : null
 }
