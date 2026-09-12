@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { getAuth, signInAnonymously, linkWithPopup, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, type Auth, type User } from 'firebase/auth'
-import { getFirestore, doc, getDoc, getDocs, collection, runTransaction, type Firestore } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, getDocs, collection, runTransaction, deleteField, type Firestore } from 'firebase/firestore'
 import type { RepositorySnapshot, SyncQueueItem, WorkoutType } from '@/core/domain/types'
 import { DEFAULT_WORKOUT_TYPES } from '@/infrastructure/repositories/tracker-repository'
 import type { CloudAdapter } from '@/infrastructure/sync/sync-engine'
@@ -56,13 +56,23 @@ export function subscribeToAuthUser(callback: (user: AuthUserInfo | null) => voi
 export async function getFirebaseCloudAdapter(): Promise<CloudAdapter | undefined> {
   const cloud = await ensureCloud(); if (!cloud) return undefined
   const { uid, db } = cloud
+  const stripUndefined = (obj: Record<string, unknown>): Record<string, unknown> =>
+    // Firestore rejects `undefined` outright — but a field that's undefined here genuinely means
+    // "not applicable" (e.g. distanceKm on a rest day) and should actively clear any stale value
+    // already sitting on the remote doc from a previous state, not just be silently omitted —
+    // merge + omitted field leaves old data untouched, which would resurface on another device.
+    Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === undefined ? deleteField() : v]))
   const push = async (item: Pick<SyncQueueItem, 'entity' | 'entityId' | 'operation' | 'payload' | 'updatedAt'>) => {
     const ref = doc(db, 'users', uid, item.entity, item.entityId)
     const applied = await runTransaction(db, async tx => {
       const current = await tx.get(ref)
       const currentUpdatedAt = current.data()?._sync?.updatedAt as string | undefined
       if (currentUpdatedAt && currentUpdatedAt > item.updatedAt) return false
-      tx.set(ref, { ...(item.payload as Record<string, unknown>), _sync: { updatedAt: item.updatedAt, operation: item.operation, source: 'tracker-pwa' } }, { merge: true })
+      // Firestore rejects `undefined` field values outright (unlike plain JS objects, where an
+      // optional field left unset is simply undefined and perfectly valid locally). Fields like
+      // distanceKm on a rest-day run log, or notes left blank, are legitimately undefined here —
+      // so they must be dropped from the payload entirely rather than sent as-is.
+      tx.set(ref, { ...stripUndefined(item.payload as Record<string, unknown>), _sync: { updatedAt: item.updatedAt, operation: item.operation, source: 'tracker-pwa' } }, { merge: true })
       return true
     })
     return { applied }
