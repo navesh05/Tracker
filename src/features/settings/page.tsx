@@ -39,7 +39,7 @@ export function SettingsPage(){
     <Card><CardContent><div className="card-kicker">Appearance</div><div className="appearance-row"><button className={theme==='system'?'selected':''} onClick={()=>setTheme('system')}><Moon size={16}/> System</button><button className={theme==='light'?'selected':''} onClick={()=>setTheme('light')}><Sun size={16}/> Light</button><button className={theme==='dark'?'selected':''} onClick={()=>setTheme('dark')}><Moon size={16}/> Dark</button></div></CardContent></Card>
 
     <div className="two-col">
-      <Card><CardContent><Database size={18}/><h3>Local storage</h3><p>Validated writes are committed to IndexedDB first. Activity remains available offline and sync work is queued locally.</p><div className="system-status"><CheckCircle2 size={14}/><span>{sync.pending} pending · {sync.failed} failed</span></div></CardContent></Card>
+      <Card><CardContent><Database size={18}/><h3>Local storage</h3><p> Activity remains available offline and sync work is queued locally.</p><div className="system-status"><CheckCircle2 size={14}/><span>{sync.pending} pending · {sync.failed} failed</span></div></CardContent></Card>
       <Card><CardContent>{online?<Cloud size={18}/>:<WifiOff size={18}/>}<h3>Cloud sync</h3><p>{isFirebaseConfigured()?'Firebase is configured. Sync runs in the background when a connection is available.':'Firebase is not configured yet. The app remains fully usable locally.'}</p><div className={`system-status ${sync.failed?'warning':''}`}>{sync.failed?<AlertTriangle size={14}/>:<CheckCircle2 size={14}/>}<span>{sync.lastError|| (sync.lastSyncedAt?`Last sync ${new Date(sync.lastSyncedAt).toLocaleString()}`:'No cloud sync yet')}</span></div></CardContent></Card>
     </div>
 
