@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Dumbbell, Plus } from 'lucide-react'
+import { Check, Dumbbell, List } from 'lucide-react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
@@ -20,9 +20,16 @@ export function GymPage() {
   const [selected, setSelected] = useState(today())
   const [detailOpen, setDetailOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [monthListOpen, setMonthListOpen] = useState(false)
   const log = gymLogs[selected]
   const workoutTypes = profile.workoutTypes
   const labelFor = (id: string) => workoutTypes.find(t => t.id === id)?.label ?? id
+
+  const monthEntries = useMemo(() => {
+    return Object.values(gymLogs)
+      .filter(x => x.date.startsWith(format(month, 'yyyy-MM')) && x.status !== 'not_logged')
+      .sort((a,b) => b.date.localeCompare(a.date))
+  }, [gymLogs, month])
 
   const stats = useMemo(() => {
     const values = Object.values(gymLogs).filter(x => x.date.startsWith(format(month, 'yyyy-MM')))
@@ -30,16 +37,22 @@ export function GymPage() {
   }, [gymLogs, month])
   const state = (date: string) => gymLogs[date]?.status ?? 'empty'
   const select = (date: string) => { if (isFutureDate(date)) return; setSelected(date); if (gymLogs[date]) setDetailOpen(true); else setEditOpen(true) }
-  const openToday = () => { setSelected(today()); if (gymLogs[today()]) setDetailOpen(true); else setEditOpen(true) }
 
   return <div className="page-stack viewport-tight">
-    <section className="page-heading"><div><p className="eyebrow">Gym · {format(parseDate(selected), 'MMM d')}</p><h1>Strength</h1><p className="subtle">Log any day's session below.</p></div><Button onClick={openToday}><Plus size={15}/> Log today</Button></section>
+    <section className="page-heading"><div><p className="eyebrow">Gym · {format(parseDate(selected), 'MMM d')}</p><h1>Strength</h1><p className="subtle">Tap any date on the calendar to log or view it.</p></div></section>
     <div className="compact-stats"><Metric label="Workouts" value={String(stats.workout)} icon={Dumbbell}/><Metric label="Rest" value={String(stats.rest)}/><Metric label="Missed" value={String(stats.no)}/></div>
     <Card><CardContent className="calendar-content"><ActivityCalendar month={month} setMonth={setMonth} selectedDate={selected} onSelect={select} getState={state}/><div className="calendar-key"><span><i className="status-dot workout"/> Workout</span><span><i className="status-dot rest"/> Rest</span><span><i className="status-dot no"/> Missed</span><span><i className="status-dot empty"/> Not logged</span></div></CardContent></Card>
-    <button className="selected-day-card" onClick={() => { if (log) setDetailOpen(true); else setEditOpen(true) }}>
-      <div><span>Selected day</span><strong>{format(parseDate(selected), 'EEEE, MMM d')}</strong></div>
-      <p>{log?.status === 'workout' ? (log.muscles.map(labelFor).join(' · ') || 'Workout logged') : log?.status ? labelStatus(log.status) : 'Not logged — tap to add'}</p>
-    </button>
+    <Button variant="outline" className="month-list-trigger" onClick={() => setMonthListOpen(true)}><List size={15}/> View {format(month, 'MMMM')} log</Button>
+
+    <Dialog open={monthListOpen} onClose={() => setMonthListOpen(false)} title={`Gym · ${format(month, 'MMMM yyyy')}`} description={monthEntries.length ? `${monthEntries.length} logged day${monthEntries.length===1?'':'s'} this month` : 'No entries logged this month yet.'}>
+      <div className="weight-entry-list">
+        {monthEntries.map(entry => <button key={entry.date} className="weight-entry-row" onClick={() => { setSelected(entry.date); setMonthListOpen(false); setDetailOpen(true) }}>
+          <span className="weight-entry-date">{format(parseDate(entry.date),'EEE, MMM d')}</span>
+          <span className={`detail-badge ${entry.status}`}>{labelStatus(entry.status)}</span>
+          {entry.status === 'workout' && entry.muscles.length > 0 && <span className="weight-entry-notes">{entry.muscles.map(labelFor).join(', ')}</span>}
+        </button>)}
+      </div>
+    </Dialog>
 
     <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} title={`Gym · ${format(parseDate(selected), 'EEE, MMM d')}`}>
       <div className="detail-view">

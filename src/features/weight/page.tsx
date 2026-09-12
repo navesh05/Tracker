@@ -31,7 +31,7 @@ export function WeightPage() {
 
   return <div className="page-stack long-page">
     <section className="page-heading">
-      <div><p className="eyebrow">Weight</p><h1>Weigh-ins</h1><p className="subtle">Log any date, anytime. No fixed weekly schedule.</p></div>
+      <div><p className="eyebrow">Weight</p><h1>Weigh-ins</h1><p className="subtle"></p></div>
       <Button onClick={openAdd}><Plus size={15}/> Add entry</Button>
     </section>
 

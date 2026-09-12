@@ -32,6 +32,6 @@ export function ActivityHeatmap({ getState, month, setMonth }: { getState: (date
       </div>
     })}</div>
     <div className="heat-legend"><span><i className="heat-empty"/> No activity</span><span><i className="heat-one"/> One</span><span><i className="heat-both"/> Gym + Run</span><span><i className="heat-rest"/> Both rest</span></div>
-    {isCurrentMonth ? <p className="heatmap-note">Activity is Gym + Run only. Rest and missed days never count as active.</p> : null}
+    {isCurrentMonth ? <p className="heatmap-note"></p> : null}
   </div>
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Footprints, Plus, Route, Timer } from 'lucide-react'
+import { Check, Footprints, Route, Timer, List } from 'lucide-react'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
@@ -20,20 +20,28 @@ export function RunPage() {
   const [month,setMonth]=useState(new Date()), [selected,setSelected]=useState(today())
   const [detailOpen, setDetailOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [monthListOpen, setMonthListOpen] = useState(false)
   const log=runLogs[selected]
+  const monthEntries = useMemo(() => Object.values(runLogs).filter(x => x.date.startsWith(format(month,'yyyy-MM')) && x.status !== 'not_logged').sort((a,b) => b.date.localeCompare(a.date)), [runLogs, month])
   const stats=useMemo(()=>{const v=Object.values(runLogs).filter(x=>x.date.startsWith(format(month,'yyyy-MM'))); const runs=v.filter(x=>x.status==='run'); const distance=runs.reduce((s,x)=>s+(x.distanceKm??0),0); return {runs:runs.length,distance,pace:formatPace(runs.length?runs.reduce((s,x)=>s+(x.durationSeconds??0),0)/Math.max(distance,0.0001):null)}},[runLogs,month])
   const state=(date:string)=>runLogs[date]?.status??'empty'
   const select=(date:string)=>{ if(isFutureDate(date))return; setSelected(date); if (runLogs[date]) setDetailOpen(true); else setEditOpen(true) }
-  const openToday=()=>{ setSelected(today()); if (runLogs[today()]) setDetailOpen(true); else setEditOpen(true) }
 
   return <div className="page-stack viewport-tight">
-    <section className="page-heading"><div><p className="eyebrow">Run · {format(parseDate(selected), 'MMM d')}</p><h1>Running</h1><p className="subtle">Log any day's run below.</p></div><Button onClick={openToday}><Plus size={15}/> Log today</Button></section>
+    <section className="page-heading"><div><p className="eyebrow">Run · {format(parseDate(selected), 'MMM d')}</p><h1>Running</h1><p className="subtle">Tap any date on the calendar to log or view it.</p></div></section>
     <div className="compact-stats"><Metric label="Runs" value={String(stats.runs)} icon={Footprints}/><Metric label="Distance" value={`${stats.distance.toFixed(1)} km`} icon={Route}/><Metric label="Avg pace" value={stats.pace} icon={Timer}/></div>
     <Card><CardContent className="calendar-content"><ActivityCalendar month={month} setMonth={setMonth} selectedDate={selected} onSelect={select} getState={state}/><div className="calendar-key"><span><i className="status-dot workout"/> Run</span><span><i className="status-dot rest"/> Rest</span><span><i className="status-dot no"/> Missed</span><span><i className="status-dot empty"/> Not logged</span></div></CardContent></Card>
-    <button className="selected-day-card" onClick={() => { if (log) setDetailOpen(true); else setEditOpen(true) }}>
-      <div><span>Selected day</span><strong>{format(parseDate(selected), 'EEEE, MMM d')}</strong></div>
-      <p>{log?.status==='run' ? `${log.distanceKm ?? 0} km · ${formatDuration(log.durationSeconds)}` : log ? labelStatus(log.status) : 'Not logged — tap to add'}</p>
-    </button>
+    <Button variant="outline" className="month-list-trigger" onClick={() => setMonthListOpen(true)}><List size={15}/> View {format(month, 'MMMM')} log</Button>
+
+    <Dialog open={monthListOpen} onClose={() => setMonthListOpen(false)} title={`Run · ${format(month, 'MMMM yyyy')}`} description={monthEntries.length ? `${monthEntries.length} logged day${monthEntries.length===1?'':'s'} this month` : 'No entries logged this month yet.'}>
+      <div className="weight-entry-list">
+        {monthEntries.map(entry => <button key={entry.date} className="weight-entry-row" onClick={() => { setSelected(entry.date); setMonthListOpen(false); setDetailOpen(true) }}>
+          <span className="weight-entry-date">{format(parseDate(entry.date),'EEE, MMM d')}</span>
+          <span className={`detail-badge ${entry.status}`}>{labelStatus(entry.status)}</span>
+          {entry.status === 'run' && <span className="weight-entry-notes">{entry.distanceKm ?? 0} km</span>}
+        </button>)}
+      </div>
+    </Dialog>
 
     <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} title={`Run · ${format(parseDate(selected), 'EEE, MMM d')}`}>
       <div className="detail-view">

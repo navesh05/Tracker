@@ -37,19 +37,21 @@ export function HomePage() {
   const latest = weights.at(-1)
 
   return <div className="page-stack home-page viewport-tight">
-    <section className="hero-row"><div><p className="eyebrow">Overview · {format(new Date(),'EEEE, MMMM d')}</p><h1>Good morning, {profile.name.split(' ')[0]}.</h1><p className="subtle">Training, running and progress — in one calm view.</p></div></section>
+    <section className="hero-row"><div><p className="eyebrow">Overview · {format(new Date(),'EEEE, MMMM d')}</p><h1>Good morning, {profile.name.split(' ')[0]}.</h1><p className="subtle"></p></div></section>
     <div className="dashboard-grid">
       <Card className="today-card"><CardContent>
         <div className="card-kicker">Today</div>
         <div className="today-main">
-          <div><h2>{format(new Date(d), 'EEEE')}</h2><p>Log today's session below.</p></div>
+          <div><h2>{format(new Date(d), 'EEEE')}</h2><p></p></div>
           <div className="today-status">
             <Link to="/gym" className={`today-activity ${activityStatusClass(todayGym?.status)}`}><Dumbbell size={14}/><span>Gym</span><small>{activityStatusLabel(todayGym?.status)}</small></Link>
             <Link to="/run" className={`today-activity ${runStatusClass(todayRun?.status)}`}><Footprints size={14}/><span>Run</span><small>{runStatusLabel(todayRun?.status)}</small></Link>
           </div>
         </div>
-        <div className="today-footer"><span>{latest ? `${latest.weightKg.toFixed(1)} kg · last weigh-in` : 'No weight logged yet'}</span><span className="today-footer-note">Gym & Run cards open their logs</span></div>
+        <div className="today-footer"><span>{latest ? `${latest.weightKg.toFixed(1)} kg · last weigh-in` : 'No weight logged yet'}</span><span className="today-footer-note"></span></div>
       </CardContent></Card>
+
+      <Card className="activity-card"><CardContent><div className="section-top"><div><div className="card-kicker">Activity</div><h3>{activeDays} active {activeDays===1?'day':'days'}</h3></div></div><ActivityHeatmap month={activityMonth} setMonth={setActivityMonth} getState={x=>heatState(gymLogs[x],runLogs[x])}/></CardContent></Card>
 
       <Card className="progress-card"><CardContent>
         <div className="section-top">
@@ -59,8 +61,6 @@ export function HomePage() {
         <div className="progress-track"><i style={{ width:`${progress}%` }}/></div>
         <div className="progress-meta"><span>Start {profile.startWeightKg} kg</span><span>{progress.toFixed(0)}%</span></div>
       </CardContent></Card>
-
-      <Card className="activity-card"><CardContent><div className="section-top"><div><div className="card-kicker">Activity</div><h3>{activeDays} active {activeDays===1?'day':'days'}</h3></div></div><ActivityHeatmap month={activityMonth} setMonth={setActivityMonth} getState={x=>heatState(gymLogs[x],runLogs[x])}/></CardContent></Card>
 
       <Card className="weight-card"><CardContent>
         <div className="section-top"><div><div className="card-kicker">Weight trend</div><h3>{latestWeight.toFixed(1)} kg</h3></div><span className="trend">{weights.length ? `${weights.length} entr${weights.length===1?'y':'ies'}` : 'No entries yet'}</span></div>
